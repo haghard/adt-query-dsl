@@ -8,9 +8,9 @@ object User {
   val schema: Schema[User] = DeriveSchema.gen[User]
 
   val (
-    id: Selector[User, Long] @unchecked,
-    name: Selector[User, String] @unchecked,
-    age: Selector[User, Int] @unchecked
+    id: PathSelector[User, Long] @unchecked,
+    name: PathSelector[User, String] @unchecked,
+    age: PathSelector[User, Int] @unchecked
   ) =
     schema.makeAccessors(BuilderSelector): @unchecked
 }
@@ -21,9 +21,70 @@ object Session {
   val schema: Schema[Session] = DeriveSchema.gen[Session]
 
   val (
-    id: Selector[Session, Long] @unchecked,
-    user: Selector[Session, User] @unchecked,
-    token: Selector[Session, User] @unchecked
+    id: PathSelector[Session, Long] @unchecked,
+    user: PathSelector[Session, User] @unchecked,
+    token: PathSelector[Session, User] @unchecked
   ) =
     schema.makeAccessors(BuilderSelector): @unchecked
+}
+
+sealed trait PaymentMethod
+
+object PaymentMethod {
+
+  // Schema[PaymentMethod]
+  implicit val schema: Schema.Enum3[CreditCard, WireTransfer, ACH, PaymentMethod] =
+    DeriveSchema.gen[PaymentMethod]
+
+  final case class CreditCard(number: String, expirationMonth: Int, expirationYear: Int) extends PaymentMethod
+  object CreditCard {
+    implicit val schema: Schema[CreditCard] = DeriveSchema.gen[CreditCard]
+    val (
+      number: PathSelector[CreditCard, String] @unchecked,
+      expirationMonth: PathSelector[CreditCard, Int] @unchecked,
+      expirationYear: PathSelector[CreditCard, Int] @unchecked,
+    ) = schema.makeAccessors(BuilderSelector): @unchecked
+  }
+
+  final case class WireTransfer(accountNumber: String, bankCode: Option[String]) extends PaymentMethod
+  object WireTransfer {
+    implicit val schema: Schema[WireTransfer] = DeriveSchema.gen[WireTransfer]
+  }
+
+  final case class ACH(accountNumber: String, bankCode: String) extends PaymentMethod
+  object ACH {
+    implicit val schema: Schema[ACH] = DeriveSchema.gen[ACH]
+    val (
+      accountNumber: PathSelector[ACH, String] @unchecked,
+      bankCode: PathSelector[ACH, String] @unchecked,
+    ) = schema.makeAccessors(BuilderSelector): @unchecked
+
+    val dis = Discriminator2[PaymentMethod, PaymentMethod.ACH]( /*PaymentMethod.schema,*/ schema)
+  }
+
+  // val ACH$ = Discriminator2[PaymentMethod, PaymentMethod.ACH](PaymentMethod.ACH.schema)
+}
+
+final case class Profile(paymentMethod: PaymentMethod, snn: String)
+object Profile {
+  val schema: Schema[Profile] = DeriveSchema.gen[Profile]
+
+  val (
+    paymentMethod: PathSelector[Profile, PaymentMethod] @unchecked,
+    snn: PathSelector[Profile, String] @unchecked
+  ) = schema.makeAccessors(BuilderSelector): @unchecked
+}
+
+final case class BankUser(name: String, info: Profile)
+
+object BankUser {
+
+  val schema: Schema[BankUser] = DeriveSchema.gen[BankUser]
+
+  val (
+    name: PathSelector[BankUser, String] @unchecked,
+    profile: PathSelector[BankUser, Profile] @unchecked,
+    // pm: PathSelector[BankUser, PaymentMethod] @unchecked,
+  ) = schema.makeAccessors(BuilderSelector): @unchecked
+
 }
