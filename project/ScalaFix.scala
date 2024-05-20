@@ -9,12 +9,12 @@ import scalafix.sbt.ScalafixPlugin
 object ScalaFix extends AutoPlugin {
 
   override def requires = ScalafixPlugin
-  override def trigger = allRequirements
+  override def trigger  = allRequirements
 
   import ScalafixPlugin.autoImport._
 
   override lazy val projectSettings = Seq(
-    semanticdbEnabled := true, // enable SemanticDB
+    semanticdbEnabled := true,                        // enable SemanticDB
     semanticdbVersion := scalafixSemanticdb.revision, // use Scalafix compatible version
     ThisBuild / scalafixDependencies ++= Seq(
       "org.scala-lang" %% "scala-rewrites" % "0.1.5"

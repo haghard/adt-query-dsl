@@ -42,13 +42,21 @@ object PaymentMethod {
     val (
       number: PathSelector[CreditCard, String] @unchecked,
       expirationMonth: PathSelector[CreditCard, Int] @unchecked,
-      expirationYear: PathSelector[CreditCard, Int] @unchecked,
+      expirationYear: PathSelector[CreditCard, Int] @unchecked
     ) = schema.makeAccessors(BuilderSelector): @unchecked
+
+    val DTOR = Discriminator[PaymentMethod, PaymentMethod.CreditCard](PaymentMethod.schema, CreditCard.schema)
   }
 
   final case class WireTransfer(accountNumber: String, bankCode: Option[String]) extends PaymentMethod
   object WireTransfer {
     implicit val schema: Schema[WireTransfer] = DeriveSchema.gen[WireTransfer]
+    val (
+      accountNumber: PathSelector[WireTransfer, String] @unchecked,
+      bankCode: PathSelector[WireTransfer, Option[String]] @unchecked
+    ) = schema.makeAccessors(BuilderSelector): @unchecked
+
+    val DTOR = Discriminator[PaymentMethod, PaymentMethod.WireTransfer](PaymentMethod.schema, WireTransfer.schema)
   }
 
   final case class ACH(accountNumber: String, bankCode: String) extends PaymentMethod
@@ -56,10 +64,10 @@ object PaymentMethod {
     implicit val schema: Schema[ACH] = DeriveSchema.gen[ACH]
     val (
       accountNumber: PathSelector[ACH, String] @unchecked,
-      bankCode: PathSelector[ACH, String] @unchecked,
+      bankCode: PathSelector[ACH, String] @unchecked
     ) = schema.makeAccessors(BuilderSelector): @unchecked
 
-    val dis = Discriminator2[PaymentMethod, PaymentMethod.ACH]( /*PaymentMethod.schema,*/ schema)
+    val DTOR = Discriminator[PaymentMethod, PaymentMethod.ACH](PaymentMethod.schema, ACH.schema)
   }
 
   // val ACH$ = Discriminator2[PaymentMethod, PaymentMethod.ACH](PaymentMethod.ACH.schema)
@@ -83,8 +91,7 @@ object BankUser {
 
   val (
     name: PathSelector[BankUser, String] @unchecked,
-    profile: PathSelector[BankUser, Profile] @unchecked,
-    // pm: PathSelector[BankUser, PaymentMethod] @unchecked,
+    profile: PathSelector[BankUser, Profile] @unchecked
   ) = schema.makeAccessors(BuilderSelector): @unchecked
 
 }

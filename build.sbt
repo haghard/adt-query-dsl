@@ -2,10 +2,11 @@ name := "adt-query-dsl"
 
 version := "1.0"
 
-scalaVersion := "2.13.12"
+scalaVersion := "2.13.14"
 
 Compile / scalacOptions ++= Seq(
-  "-Xsource:3",
+  //"-Xsource:3",
+  "-Xsource:3-cross",
   "-release:17",
   "-deprecation",
   "-feature",
@@ -19,21 +20,35 @@ Compile / scalacOptions ++= Seq(
   "-Xmigration" //Emit migration warnings under -Xsource:3 as fatal warnings, not errors; -Xmigration disables fatality (Demote the errors to warnings)
 )
 
+//https://repo1.maven.org/maven2/com/lihaoyi/ammonite-compiler_3.3.1/3.0.0-M2-3-b5eb4787/
+val AmmoniteVersion = "3.0.0-M2-3-b5eb4787"
+
 libraryDependencies ++= Seq(
-  "ch.qos.logback" % "logback-classic" % "1.4.7",
+  "ch.qos.logback" % "logback-classic" % "1.5.6",
   "org.scala-lang"  %  "scala-reflect" % scalaVersion.value,
 
-  "dev.zio" %% "zio-schema" % "0.4.16",
-  "dev.zio" %% "zio-schema-derivation" % "0.4.16",
-  "dev.zio" %% "zio-schema-json" % "0.4.16",
-  "dev.zio" %% "zio-schema-protobuf" % "0.4.16",
+  //"dev.zio" %% "zio-schema" % "1.1.1",
+  "dev.zio" %% "zio-schema-derivation" % "1.1.1", //"0.4.17"
+  //"dev.zio" %% "zio-schema-json" % "1.1.1",
+  //"dev.zio" %% "zio-schema-protobuf" % "1.0.1",
 
   //https://zio.dev/zio-prelude/
   "dev.zio" %% "zio-prelude" % "1.0.0-RC21",
-  "com.lihaoyi" % "ammonite" % "3.0.0-M0-52-d2acc162" % "test" cross CrossVersion.full
+
+
+
+  "com.lihaoyi" % "ammonite" % AmmoniteVersion % "test" cross CrossVersion.full
 )
 
 scalafmtOnCompile := true
+
+//zio.elasticsearch
+addCommandAlias("check", "fixCheck; fmtCheck; headerCheck")
+addCommandAlias("fix", "scalafixAll")
+addCommandAlias("fixCheck", "scalafixAll --check")
+addCommandAlias("fmt", "all scalafmtSbt scalafmtAll")
+addCommandAlias("fmtCheck", "all scalafmtSbtCheck scalafmtCheckAll")
+
 
 addCommandAlias("c", "compile")
 addCommandAlias("r", "reload")

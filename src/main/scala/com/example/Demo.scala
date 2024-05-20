@@ -1,6 +1,10 @@
 package com.example
 
+import org.slf4j.LoggerFactory
+
 object Demo extends App {
+
+  val logger = LoggerFactory.getLogger(getClass)
 
   val s = Session(30, User(42, "jack", 34), "token")
 
@@ -12,34 +16,35 @@ object Demo extends App {
   selector =:= "jack" apply s
   selector =:= "jack" apply s
 
-  ((Session.user / User.age) =:= 10).apply(s)
-  // logger.warn(s"$r0")
+  val r0 = ((Session.user / User.age) =:= 10).apply(s)
+  logger.warn(s"$r0")
 
-  ((Session.user / User.age) >> 10).apply(s)
-  // logger.warn(s"$r1")
+  val r1 = ((Session.user / User.age) >> 10).apply(s)
+  logger.warn(s"$r1")
 
-  val pm  = PaymentMethod.CreditCard("11", 1, 1)
-  val ach = PaymentMethod.ACH("111", bankCode = "aa")
+  val pmAch = PaymentMethod.ACH("111", bankCode = "aa")
+  val alice = BankUser("alice", Profile(pmAch, "123"))
 
-  val bu = BankUser("a", Profile.apply(ach, ""))
+  val pmCC = PaymentMethod.CreditCard("123456", 1, 1)
+  val bob  = BankUser("bob", Profile(pmCC, "321"))
 
-  // val r3 = BankUser.pm.isCaseOf[PaymentMethod.CreditCard].apply(bu)
-  // val r4 = BankUser.pm.isCaseOf[PaymentMethod.ACH].apply(bu)
+  val bankCode = (BankUser.profile / Profile.paymentMethod)./?(PaymentMethod.ACH.schema)./(PaymentMethod.ACH.bankCode)
+  (bankCode =:= "aa").apply(alice)
 
-  // Discriminator(PaymentMethod.schema, PaymentMethod.ACH.schema)
-  // println(BankUser.profile./(Profile.paymentMethod)./?(PaymentMethod.ACH.dis).apply(bu))
-
-  val ps = (BankUser.profile / Profile.paymentMethod)./?(PaymentMethod.ACH.schema)./(PaymentMethod.ACH.bankCode)
-
-  val ps1 =
+  val ccNumber =
     (BankUser.profile./(Profile.paymentMethod)./?(PaymentMethod.CreditCard.schema)) / PaymentMethod.CreditCard.number
 
-  println((ps =:= "aa").apply(bu))
-  println((ps1 =:= "aa").apply(bu))
+  (ccNumber startsWith "123").apply(bob)
+  (ccNumber % "123").apply(bob)
+
+  val dv                           = PaymentMethod.ACH.schema.toDynamic(pmAch)
+  val recovered: PaymentMethod.ACH = PaymentMethod.ACH.DTOR.apply(dv).getOrElse(???)
+  val recovered1                   = PaymentMethod.ACH.DTOR.fromValue(pmAch)
+
+  PaymentMethod.ACH.DTOR.fromValue(pmCC) // "Deconstruction error
+
+  val dv1 = PaymentMethod.CreditCard.schema.toDynamic(pmCC)
+  PaymentMethod.CreditCard.DTOR.apply(dv1)
+  PaymentMethod.CreditCard
 
 }
-
-/*
-https://github.com/search?q=def+makePrism+language%3AScala&type=code
-https://github.com/thinkharderdev/zio-cache/blob/d6ebbdf75224448174c35fe29096046b9ac5fb63/zio-cache/shared/src/main/scala/zio/cache/Query.scala#L64
- */

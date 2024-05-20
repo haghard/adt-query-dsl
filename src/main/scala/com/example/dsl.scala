@@ -1,69 +1,47 @@
 package com.example
 
 import org.slf4j.LoggerFactory
-
-import scala.annotation.tailrec
 import zio.schema.{DynamicValue, Schema, TypeId}
 
-final case class Discriminator2[S, A]( /*sum: Schema.Enum[S],*/ term: Schema[A]) {
-  def apply(dv: DynamicValue): Either[String, Option[A]] =
-    term match {
-      case c: Schema.Record[_] =>
-        c.fromDynamic(dv).map(Some(_))
+import scala.annotation.{nowarn, tailrec}
+
+final case class Discriminator[S, A](sum: Schema.Enum[S], termOfSum: Schema[A]) {
+
+  def fromValue(v: S): Either[String, A] =
+    termOfSum match {
+      case term: Schema.Record[A] =>
+        sum.caseOf(term.id.name) match {
+          case Some(rec) =>
+            // scala.util.Try(rec0.deconstruct(v))
+            rec
+              .deconstructOption(v)
+              .map {
+                case v: A @nowarn => Right(v)
+                case o            => Left("Found " + o.getClass().getName())
+              }
+              .getOrElse(Left("Deconstruction error"))
+          // Right(s.deconstruct(v).asInstanceOf[A])
+          case None =>
+            Left(s"${termOfSum} is not a term of ${sum}")
+        }
+      case _ =>
+        Left("Unexpected")
+    }
+
+  def apply(dv: DynamicValue): Either[String, A] =
+    termOfSum match {
+      case term: Schema.Record[_] =>
+        // term.fromDynamic(dv).map(Some(_))
+        sum.caseOf(term.id.name) match {
+          case Some(_) =>
+            term.fromDynamic(dv)
+          case None =>
+            Left(s"${termOfSum} is not a term of ${sum}")
+        }
       case _ =>
         Left("Unexpected")
     }
 }
-
-/*
-final case class Discriminator[S, A](sum: Schema.Enum[S], subtype: /*Schema.Case[S, A]*/ Schema[A]) { self =>
-  def apply(s: S): Either[String, Option[A]] =
-    sum.toDynamic(s) match {
-      case DynamicValue.Enumeration(id, (_, value)) =>
-        if (id == sum.id) {
-          subtype
-            .fromDynamic(value)
-            .map(Some(_))
-        } else {
-          Left(s"Cannot find " + sum.id)
-        }
-      case _ =>
-        Left(s"Cannot cast subtype on non-enum type")
-    }
-}
-
-final case class Selector[S, A, A1](s: PathSelector[S, A], d: Discriminator2[A, A1]) {
-  @tailrec
-  def go(rec: DynamicValue.Record, paths: List[String]): Either[String, A1] =
-    paths match {
-      case segment :: segments =>
-        if (rec.values.contains(segment)) {
-          rec.values(segment) match {
-            case rec0: DynamicValue.Record =>
-              go(rec0, segments)
-            case enum: DynamicValue.Enumeration =>
-              // if(enum.id.name == enum.id) {
-              d(enum.value._2).flatMap {
-                case Some(v) => Right(v)
-                case None    => Left("None")
-              }
-            // } else Left(s"Boom !")
-            case _ =>
-              Left(s"$segment not found inside ${s.path} !")
-          }
-        } else Left(s"$segment not found inside ${s.path} !")
-      case Nil =>
-        Left("Empty segments!")
-    }
-  def apply(v: S): Either[String, A1] =
-    s.schema.toDynamic(v) match {
-      case rec: DynamicValue.Record =>
-        go(rec, s.path)
-      case _ =>
-        Left("Cannot select from non-record type")
-    }
-}
- */
 
 final case class PathSelector[S, A](
   schema: Schema.Record[S],
@@ -84,15 +62,18 @@ final case class PathSelector[S, A](
 
   // def /??[A1](term: Schema[A1]): Predicate[S, A1] = Predicate.Discriminator[S, A, A1](self, term)
 
+  // def should[S1 <: S: Schema](queries: ElasticQuery[S1]*): BoolQuery[S1]
+
+  // def /?[A1 <: A: Schema](sumTerm: Schema[A1])(implicit ev: A `≠` A1): PathSelector[S, A1] = {
+
   def /?[A1](sumTerm: Schema[A1])(implicit ev: A `≠` A1, ev1: A1 IsSubtypeOf A): PathSelector[S, A1] = {
-    val typeId: TypeId = {
+    val typeId: TypeId =
       sumTerm match {
         case record: Schema.Record[_] => record.id
         case enum: Schema.Enum[_]     => enum.id
         case other                    => throw new IllegalArgumentException(s"Unexpected argument $other")
       }
-    }
-    //TODO: improve it
+    // TODO: improve it
     self.copy(sums = self.sums + (self.path.last -> typeId))
   }
 
@@ -111,6 +92,9 @@ final case class PathSelector[S, A](
     Predicate.EndsWith(self.coerce, ev(that))
 
   def startsWith(that: A)(implicit ev: A =:= String): Predicate[S, A] =
+    %(that)
+
+  def %(that: A)(implicit ev: A =:= String): Predicate[S, A] =
     Predicate.StartsWith(self.coerce, ev(that))
 
   def >>(that: A)(implicit num: Numeric[A]): Predicate[S, A] =
@@ -132,13 +116,13 @@ final case class PathSelector[S, A](
               case enum: DynamicValue.Enumeration =>
                 val (eName, dv) = enum.value
                 dv match {
-                  case rec: DynamicValue.Record =>
+                  case rec0: DynamicValue.Record =>
                     val expTypeId = sums(segment)
-                    if (expTypeId == rec.id)
-                      go(rec, rest, visited :+ segment :+ eName)
+                    if (expTypeId == rec0.id)
+                      go(rec0, rest, visited :+ segment :+ eName)
                     else
-                      Left(s"Expected $expTypeId but ${rec.id} found !")
-                  case enum0: DynamicValue.Enumeration =>
+                      Left(s"Expected $expTypeId but ${rec0.id} found !")
+                  case _: DynamicValue.Enumeration =>
                     ???
                   case _ =>
                     Left("Cannot select from non-record type")
@@ -262,8 +246,10 @@ final case class PathSelector[S, A](
 }
 
 object BuilderSelector extends zio.schema.AccessorBuilder {
-  type Lens[F, S, A]   = PathSelector[S, A]
-  type Prism[F, S, A]  = Unit /*EnumSelector*/ /*Discriminator[S, A]*/
+  type Lens[F, S, A]  = PathSelector[S, A]
+  type Prism[F, S, A] = Unit
+  /*EnumSelector*/
+  /*Discriminator[S, A]*/
   type Traversal[S, A] = Unit
 
   override def makeLens[F, S, A](schema: Schema.Record[S], term: Schema.Field[S, A]): PathSelector[S, A] =
@@ -272,7 +258,8 @@ object BuilderSelector extends zio.schema.AccessorBuilder {
   override def makePrism[F, S, A](
     sum: Schema.Enum[S],
     term: Schema.Case[S, A]
-  ): Unit /*EnumSelector*/ /*Discriminator[S, A]*/ = ()
+  ): Unit /*EnumSelector*/
+  /*Discriminator[S, A]*/ = ()
   // Discriminator[S, A](sum, term.schema)
   // term.deconstructOption(whole)
   // EnumSelector[S, A](sum, term)
@@ -340,3 +327,53 @@ object Predicate {
   }*/
 
 }
+
+/*
+final case class Discriminator[S, A](sum: Schema.Enum[S], subtype: /*Schema.Case[S, A]*/ Schema[A]) { self =>
+  def apply(s: S): Either[String, Option[A]] =
+    sum.toDynamic(s) match {
+      case DynamicValue.Enumeration(id, (_, value)) =>
+        if (id == sum.id) {
+          subtype
+            .fromDynamic(value)
+            .map(Some(_))
+        } else {
+          Left(s"Cannot find " + sum.id)
+        }
+      case _ =>
+        Left(s"Cannot cast subtype on non-enum type")
+    }
+}
+
+final case class Selector[S, A, A1](s: PathSelector[S, A], d: Discriminator2[A, A1]) {
+  @tailrec
+  def go(rec: DynamicValue.Record, paths: List[String]): Either[String, A1] =
+    paths match {
+      case segment :: segments =>
+        if (rec.values.contains(segment)) {
+          rec.values(segment) match {
+            case rec0: DynamicValue.Record =>
+              go(rec0, segments)
+            case enum: DynamicValue.Enumeration =>
+              // if(enum.id.name == enum.id) {
+              d(enum.value._2).flatMap {
+                case Some(v) => Right(v)
+                case None    => Left("None")
+              }
+            // } else Left(s"Boom !")
+            case _ =>
+              Left(s"$segment not found inside ${s.path} !")
+          }
+        } else Left(s"$segment not found inside ${s.path} !")
+      case Nil =>
+        Left("Empty segments!")
+    }
+  def apply(v: S): Either[String, A1] =
+    s.schema.toDynamic(v) match {
+      case rec: DynamicValue.Record =>
+        go(rec, s.path)
+      case _ =>
+        Left("Cannot select from non-record type")
+    }
+}
+ */
