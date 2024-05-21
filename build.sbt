@@ -5,7 +5,6 @@ version := "1.0"
 scalaVersion := "2.13.14"
 
 Compile / scalacOptions ++= Seq(
-  //"-Xsource:3",
   "-Xsource:3-cross",
   "-release:17",
   "-deprecation",
@@ -27,16 +26,12 @@ libraryDependencies ++= Seq(
   "ch.qos.logback" % "logback-classic" % "1.5.6",
   "org.scala-lang"  %  "scala-reflect" % scalaVersion.value,
 
-  //"dev.zio" %% "zio-schema" % "1.1.1",
-  "dev.zio" %% "zio-schema-derivation" % "1.1.1", //"0.4.17"
-  //"dev.zio" %% "zio-schema-json" % "1.1.1",
-  //"dev.zio" %% "zio-schema-protobuf" % "1.0.1",
+  "dev.zio" %% "zio-schema" % "1.1.1",
+  "dev.zio" %% "zio-schema-derivation" % "1.1.1",
 
   //https://zio.dev/zio-prelude/
   "dev.zio" %% "zio-prelude" % "1.0.0-RC21",
-
-
-
+  
   "com.lihaoyi" % "ammonite" % AmmoniteVersion % "test" cross CrossVersion.full
 )
 

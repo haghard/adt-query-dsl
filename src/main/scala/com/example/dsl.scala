@@ -66,7 +66,9 @@ final case class PathSelector[S, A](
 
   // def /?[A1 <: A: Schema](sumTerm: Schema[A1])(implicit ev: A `≠` A1): PathSelector[S, A1] = {
 
-  def /?[A1](sumTerm: Schema[A1])(implicit ev: A `≠` A1, ev1: A1 IsSubtypeOf A): PathSelector[S, A1] = {
+  def /?[A1](
+    sumTerm: Schema[A1]
+  )(implicit @nowarn ev: A `≠` A1, @nowarn ev1: A1 IsSubtypeOf A): PathSelector[S, A1] = {
     val typeId: TypeId =
       sumTerm match {
         case record: Schema.Record[_] => record.id

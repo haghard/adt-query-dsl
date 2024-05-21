@@ -1,5 +1,5 @@
-import sbt._
-import sbt.Keys.{semanticdbEnabled, semanticdbVersion}
+import sbt.*
+import sbt.Keys.{scalaBinaryVersion, semanticdbEnabled, semanticdbVersion}
 import scalafix.sbt.ScalafixPlugin
 
 //ScalaFix
@@ -18,6 +18,9 @@ object ScalaFix extends AutoPlugin {
     semanticdbVersion := scalafixSemanticdb.revision, // use Scalafix compatible version
     ThisBuild / scalafixDependencies ++= Seq(
       "org.scala-lang" %% "scala-rewrites" % "0.1.5"
-    )
+    ),
+
+    ThisBuild / scalafixDependencies += "com.github.liancheng" %% "organize-imports" % "0.6.0",
+    ThisBuild / scalafixScalaBinaryVersion := scalaBinaryVersion.value
   )
 }
