@@ -28,7 +28,8 @@ object Demo extends App {
   val pmCC = PaymentMethod.CreditCard("123456", 1, 1)
   val bob  = BankUser("bob", Profile(pmCC, "321"))
 
-  val bankCode = (BankUser.profile / Profile.paymentMethod)./?(PaymentMethod.ACH.schema)./(PaymentMethod.ACH.bankCode)
+  val bankCode =
+    (BankUser.profile / Profile.paymentMethod)./?(PaymentMethod.ACH.schema)./(PaymentMethod.ACH.bankCode)
   (bankCode =:= "aa").apply(alice)
 
   val ccNumber =

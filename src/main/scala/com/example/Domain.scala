@@ -70,7 +70,6 @@ object PaymentMethod {
     val DTOR = Discriminator[PaymentMethod, PaymentMethod.ACH](PaymentMethod.schema, ACH.schema)
   }
 
-  // val ACH$ = Discriminator2[PaymentMethod, PaymentMethod.ACH](PaymentMethod.ACH.schema)
 }
 
 final case class Profile(paymentMethod: PaymentMethod, snn: String)

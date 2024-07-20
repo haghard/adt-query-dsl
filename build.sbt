@@ -26,8 +26,8 @@ libraryDependencies ++= Seq(
   "ch.qos.logback" % "logback-classic" % "1.5.6",
   "org.scala-lang"  %  "scala-reflect" % scalaVersion.value,
 
-  "dev.zio" %% "zio-schema" % "1.1.1",
-  "dev.zio" %% "zio-schema-derivation" % "1.1.1",
+  "dev.zio" %% "zio-schema" % "1.3.0",
+  "dev.zio" %% "zio-schema-derivation" % "1.3.0",
 
   //https://zio.dev/zio-prelude/
   "dev.zio" %% "zio-prelude" % "1.0.0-RC21",
