@@ -32,8 +32,8 @@
   ccNumber.startsWith("123").apply(bob)
   
   val dv  = PaymentMethod.ACH.schema.toDynamic(pmAch)
-  val dv0 = PaymentMethod.ACH.Discr.apply(dv)
-  val dv1 = PaymentMethod.ACH.Discr.fromValue(pmAch)
+  val dv0 = PaymentMethod.ACH.DTOR.apply(dv)
+  val dv1 = PaymentMethod.ACH.DTOR.fromValue(pmAch)
 
 
 ```

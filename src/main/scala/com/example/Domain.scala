@@ -1,6 +1,6 @@
 package com.example
 
-import zio.schema.{DeriveSchema, Schema}
+import zio.schema.{DeriveSchema, DynamicValue, Schema}
 
 final case class User(id: Long, name: String, age: Int)
 
@@ -69,6 +69,19 @@ object PaymentMethod {
 
     val DTOR = Discriminator[PaymentMethod, PaymentMethod.ACH](PaymentMethod.schema, ACH.schema)
   }
+
+  def fromDynamicValue(
+    termIdName: String,
+    dv: DynamicValue
+  ): Either[String, PaymentMethod] =
+    PaymentMethod.schema.caseOf(termIdName) match {
+      case Some(v) =>
+        v.schema
+          .asInstanceOf[Schema[PaymentMethod]]
+          .fromDynamic(dv)
+      case None =>
+        Left(s"Unknown term: $termIdName")
+    }
 
 }
 

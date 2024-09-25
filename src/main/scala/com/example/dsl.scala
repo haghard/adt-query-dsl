@@ -22,7 +22,7 @@ final case class Discriminator[S, A](sum: Schema.Enum[S], termOfSum: Schema[A]) 
               .getOrElse(Left("Deconstruction error"))
           // Right(s.deconstruct(v).asInstanceOf[A])
           case None =>
-            Left(s"${termOfSum} is not a term of ${sum}")
+            Left(s"$termOfSum is not a term of $sum")
         }
       case _ =>
         Left("Unexpected")
@@ -36,7 +36,7 @@ final case class Discriminator[S, A](sum: Schema.Enum[S], termOfSum: Schema[A]) 
           case Some(_) =>
             term.fromDynamic(dv)
           case None =>
-            Left(s"${termOfSum} is not a term of ${sum}")
+            Left(s"$termOfSum is not a term of $sum")
         }
       case _ =>
         Left("Unexpected")

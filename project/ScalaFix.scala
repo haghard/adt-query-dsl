@@ -19,8 +19,7 @@ object ScalaFix extends AutoPlugin {
     ThisBuild / scalafixDependencies ++= Seq(
       "org.scala-lang" %% "scala-rewrites" % "0.1.5"
     ),
-
     ThisBuild / scalafixDependencies += "com.github.liancheng" %% "organize-imports" % "0.6.0",
-    ThisBuild / scalafixScalaBinaryVersion := scalaBinaryVersion.value
+    ThisBuild / scalafixScalaBinaryVersion                     := scalaBinaryVersion.value
   )
 }

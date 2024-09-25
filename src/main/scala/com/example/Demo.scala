@@ -1,6 +1,8 @@
 package com.example
 
 import org.slf4j.LoggerFactory
+import zio.schema.{DynamicValue, Schema, TypeId}
+import zio.schema.codec.JsonCodec
 
 object Demo extends App {
 
@@ -38,14 +40,30 @@ object Demo extends App {
   (ccNumber startsWith "123").apply(bob)
   (ccNumber % "123").apply(bob)
 
-  val dv                           = PaymentMethod.ACH.schema.toDynamic(pmAch)
+  val Codec = JsonCodec.schemaBasedBinaryCodec(Schema.dynamicValue)
+
+  val dv: DynamicValue        = PaymentMethod.ACH.schema.toDynamic(pmAch)
+  val bts                     = Codec.encode(dv)
+  val dvFromBts: DynamicValue = Codec.decode(bts).getOrElse(throw new Exception("Boom !!!"))
+
+  val recoveredPm =
+    dvFromBts match {
+      case DynamicValue.Record(recId, _) =>
+        val pmName: String = classOf[PaymentMethod].getSimpleName()
+        recId match {
+          case TypeId.Nominal(_, IndexedSeq(`pmName`), termName) =>
+            PaymentMethod.fromDynamicValue(termName, dvFromBts)
+          case other =>
+            Left(s"Expected Nominal($pmName) but found $other")
+        }
+      case other =>
+        Left(s"Expected DynamicValue.Record but found $other")
+    }
+
   val recovered: PaymentMethod.ACH = PaymentMethod.ACH.DTOR.apply(dv).getOrElse(???)
   val recovered1                   = PaymentMethod.ACH.DTOR.fromValue(pmAch)
 
   PaymentMethod.ACH.DTOR.fromValue(pmCC) // "Deconstruction error
-
   val dv1 = PaymentMethod.CreditCard.schema.toDynamic(pmCC)
   PaymentMethod.CreditCard.DTOR.apply(dv1)
-  PaymentMethod.CreditCard
-
 }

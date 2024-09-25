@@ -4,6 +4,8 @@ version := "1.0"
 
 scalaVersion := "2.13.14"
 
+val schemaV = "1.4.1"
+
 Compile / scalacOptions ++= Seq(
   "-Xsource:3-cross",
   "-release:17",
@@ -19,15 +21,16 @@ Compile / scalacOptions ++= Seq(
   "-Xmigration" //Emit migration warnings under -Xsource:3 as fatal warnings, not errors; -Xmigration disables fatality (Demote the errors to warnings)
 )
 
-//https://repo1.maven.org/maven2/com/lihaoyi/ammonite-compiler_3.3.1/3.0.0-M2-3-b5eb4787/
-val AmmoniteVersion = "3.0.0-M2-3-b5eb4787"
+//https://repo1.maven.org/maven2/com/lihaoyi/ammonite-compiler_3.3.1/3.0.0-M2-9-88291dd8/
+val AmmoniteVersion = "3.0.0-M2-9-88291dd8"
 
 libraryDependencies ++= Seq(
   "ch.qos.logback" % "logback-classic" % "1.5.6",
   "org.scala-lang"  %  "scala-reflect" % scalaVersion.value,
 
-  "dev.zio" %% "zio-schema" % "1.3.0",
-  "dev.zio" %% "zio-schema-derivation" % "1.3.0",
+  "dev.zio" %% "zio-schema" % schemaV,
+  "dev.zio" %% "zio-schema-derivation" % schemaV,
+  "dev.zio" %% "zio-schema-json" % schemaV,
 
   //https://zio.dev/zio-prelude/
   "dev.zio" %% "zio-prelude" % "1.0.0-RC21",
