@@ -2,7 +2,7 @@ name := "adt-query-dsl"
 
 version := "1.0"
 
-scalaVersion := "2.13.14"
+scalaVersion := "2.13.15"
 
 val schemaV = "1.4.1"
 
@@ -21,8 +21,8 @@ Compile / scalacOptions ++= Seq(
   "-Xmigration" //Emit migration warnings under -Xsource:3 as fatal warnings, not errors; -Xmigration disables fatality (Demote the errors to warnings)
 )
 
-//https://repo1.maven.org/maven2/com/lihaoyi/ammonite-compiler_3.3.1/3.0.0-M2-9-88291dd8/
-val AmmoniteVersion = "3.0.0-M2-9-88291dd8"
+//https://repo1.maven.org/maven2/com/lihaoyi/
+val AmmoniteVersion = "3.0.0"
 
 libraryDependencies ++= Seq(
   "ch.qos.logback" % "logback-classic" % "1.5.6",
