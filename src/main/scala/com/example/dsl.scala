@@ -358,8 +358,7 @@ final class OpsAccessorBuilder(
     new Ops[S, A] {
       val termName = termField.fieldName
       val schema   = product
-      override def toString: String =
-        s"Ops(field=$termName, schema=$schema)"
+      override val toString = s"Ops(field=$termName, schema=$schema)"
     }
   }
 
@@ -408,16 +407,12 @@ object Predicate {
 
   final case class And[S, A, B](a: Predicate[S, A], b: Predicate[S, B]) extends Predicate[S, A & B] {
     def apply(v: S): Either[String, Boolean] =
-      a.apply(v).flatMap { aR =>
-        if (aR) b.apply(v) else Right(aR)
-      }
+      a.apply(v).flatMap { aR => if (aR) b.apply(v) else Right(aR) }
   }
 
   final case class Or[S, A, B](a: Predicate[S, A], b: Predicate[S, B]) extends Predicate[S, A & B] {
     def apply(v: S): Either[String, Boolean] =
-      a.apply(v).flatMap { aR =>
-        b.apply(v).map(bR => aR || bR)
-      }
+      a.apply(v).flatMap { aR => b.apply(v).map(bR => aR || bR) }
   }
 
   final case class Eq[S, A](
