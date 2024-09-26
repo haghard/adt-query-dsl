@@ -48,7 +48,7 @@ addCommandAlias("fmt", "all scalafmtSbt scalafmtAll")
 addCommandAlias("fmtCheck", "all scalafmtSbtCheck scalafmtCheckAll")
 
 
-addCommandAlias("c", "compile")
+addCommandAlias("c", "compile;fix")
 addCommandAlias("r", "reload")
 
 //test:run

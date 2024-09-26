@@ -1,8 +1,8 @@
 package com.example
 
 import org.slf4j.LoggerFactory
-import zio.schema.{DynamicValue, Schema, TypeId}
 import zio.schema.codec.JsonCodec
+import zio.schema.{DynamicValue, Schema, TypeId}
 
 object Demo extends App {
 
