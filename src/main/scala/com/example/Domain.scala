@@ -12,20 +12,30 @@ object User {
     name: PathSelector[User, String] @unchecked,
     age: PathSelector[User, Int] @unchecked
   ) =
-    schema.makeAccessors(BuilderSelector): @unchecked
+    schema.makeAccessors(PathSelectorBuilder): @unchecked
 }
 
 final case class Session(id: Long, user: User, token: String)
 
 object Session {
-  val schema: Schema[Session] = DeriveSchema.gen[Session]
+  implicit val schema: Schema[Session] = DeriveSchema.gen[Session]
+
+  implicit val sWithFields: Schema.CaseClass3.WithFields[
+    "id",
+    "user",
+    "token",
+    Long,
+    User,
+    String,
+    Session
+  ] = DeriveSchema.gen[Session]
 
   val (
     id: PathSelector[Session, Long] @unchecked,
     user: PathSelector[Session, User] @unchecked,
     token: PathSelector[Session, User] @unchecked
-  ) =
-    schema.makeAccessors(BuilderSelector): @unchecked
+  ) = schema.makeAccessors(PathSelectorBuilder): @unchecked
+
 }
 
 sealed trait PaymentMethod
@@ -43,7 +53,7 @@ object PaymentMethod {
       number: PathSelector[CreditCard, String] @unchecked,
       expirationMonth: PathSelector[CreditCard, Int] @unchecked,
       expirationYear: PathSelector[CreditCard, Int] @unchecked
-    ) = schema.makeAccessors(BuilderSelector): @unchecked
+    ) = schema.makeAccessors(PathSelectorBuilder): @unchecked
 
     val DTOR = Discriminator[PaymentMethod, PaymentMethod.CreditCard](PaymentMethod.schema, CreditCard.schema)
   }
@@ -54,7 +64,7 @@ object PaymentMethod {
     val (
       accountNumber: PathSelector[WireTransfer, String] @unchecked,
       bankCode: PathSelector[WireTransfer, Option[String]] @unchecked
-    ) = schema.makeAccessors(BuilderSelector): @unchecked
+    ) = schema.makeAccessors(PathSelectorBuilder): @unchecked
 
     val DTOR = Discriminator[PaymentMethod, PaymentMethod.WireTransfer](PaymentMethod.schema, WireTransfer.schema)
   }
@@ -65,7 +75,7 @@ object PaymentMethod {
     val (
       accountNumber: PathSelector[ACH, String] @unchecked,
       bankCode: PathSelector[ACH, String] @unchecked
-    ) = schema.makeAccessors(BuilderSelector): @unchecked
+    ) = schema.makeAccessors(PathSelectorBuilder): @unchecked
 
     val DTOR = Discriminator[PaymentMethod, PaymentMethod.ACH](PaymentMethod.schema, ACH.schema)
   }
@@ -92,7 +102,7 @@ object Profile {
   val (
     paymentMethod: PathSelector[Profile, PaymentMethod] @unchecked,
     snn: PathSelector[Profile, String] @unchecked
-  ) = schema.makeAccessors(BuilderSelector): @unchecked
+  ) = schema.makeAccessors(PathSelectorBuilder): @unchecked
 }
 
 final case class BankUser(name: String, info: Profile)
@@ -104,6 +114,22 @@ object BankUser {
   val (
     name: PathSelector[BankUser, String] @unchecked,
     profile: PathSelector[BankUser, Profile] @unchecked
-  ) = schema.makeAccessors(BuilderSelector): @unchecked
+  ) = schema.makeAccessors(PathSelectorBuilder): @unchecked
+
+}
+
+final case class Row(a: String, b: Int, opt: Option[Int])
+
+object Row {
+
+  implicit val schema: Schema.CaseClass3.WithFields[
+    "a",
+    "b",
+    "opt",
+    String,
+    Int,
+    Option[Int],
+    Row
+  ] = DeriveSchema.gen[Row]
 
 }

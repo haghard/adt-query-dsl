@@ -8,7 +8,7 @@ object Demo extends App {
 
   val logger = LoggerFactory.getLogger(getClass)
 
-  val s = Session(30, User(42, "jack", 34), "token")
+  val s = Session(30, User(42, "jack", 28), "token")
 
   val selector = Session.user / User.name
 
@@ -23,6 +23,10 @@ object Demo extends App {
 
   val r1 = ((Session.user / User.age) >> 10).apply(s)
   logger.warn(s"$r1")
+
+  val age = Session.user / User.age
+  val r2  = (age >> 18).and(age << 30).apply(s)
+  logger.warn(s"**$r2")
 
   val pmAch = PaymentMethod.ACH("111", bankCode = "aa")
   val alice = BankUser("alice", Profile(pmAch, "123"))
@@ -66,4 +70,21 @@ object Demo extends App {
   PaymentMethod.ACH.DTOR.fromValue(pmCC) // "Deconstruction error
   val dv1 = PaymentMethod.CreditCard.schema.toDynamic(pmCC)
   PaymentMethod.CreditCard.DTOR.apply(dv1)
+
+  val (a, b, _) = PathAccessor[Row].columns
+  val res = a.%("aaa").or((b >> 0).and(b << 3)).apply(Row("aaaaa", 3, None))
+  logger.warn("RES: " + res)
+
+  val (id, usr, _) = OpsAccessor[Session].columns
+  val p            = (usr / User.age).>>(18).and((usr / User.name).%("ja"))
+  val ress         = p.apply(s)
+  logger.warn("PRES: " + ress)
+
+  val (a1, b1, opt1) = OpsAccessor[Row].columns
+
+  val res1 = a1.%("b").or(b1.=:=(3)).apply(Row("aaaaa", 3, None))
+  logger.warn("RES1: " + res1)
+
+  // opt1.typeTag
+
 }

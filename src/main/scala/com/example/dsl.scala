@@ -4,6 +4,7 @@ import org.slf4j.LoggerFactory
 import zio.schema.{DynamicValue, Schema, TypeId}
 
 import scala.annotation.{nowarn, tailrec}
+import scala.reflect.ClassTag
 
 final case class Discriminator[S, A](sum: Schema.Enum[S], termOfSum: Schema[A]) {
 
@@ -87,7 +88,8 @@ final case class PathSelector[S, A](
 
   // private def widen[A1](implicit ev: A <:< A1): Selector[S, A1] = self.asInstanceOf[Selector[S, A1]]
 
-  private def coerce[A1](implicit ev: A =:= A1): PathSelector[S, A1] =
+  /*private*/
+  def coerce[A1](implicit ev: A =:= A1): PathSelector[S, A1] =
     self.asInstanceOf[PathSelector[S, A1]]
 
   def endsWith(that: A)(implicit ev: A =:= String): Predicate[S, A] =
@@ -125,14 +127,14 @@ final case class PathSelector[S, A](
                     else
                       Left(s"Expected $expTypeId but ${rec0.id} found !")
                   case _: DynamicValue.Enumeration =>
-                    ???
+                    Left("Cannot select from non-record type")
                   case _ =>
                     Left("Cannot select from non-record type")
                 }
               case rec0: DynamicValue.Record =>
                 go(rec0, rest, visited :+ segment)
               case prim: DynamicValue.Primitive[A] @unchecked =>
-                logger.warn(s"read ${visited.mkString("/")}:$segment : ${prim.value}")
+                logger.warn(s"read ${visited.mkString("/")}/$segment : ${prim.value}")
                 Right(prim.value)
               case _ =>
                 Left(s"$segment not found inside ${path.mkString(",")} !")
@@ -247,7 +249,100 @@ final case class PathSelector[S, A](
   }*/
 }
 
-object BuilderSelector extends zio.schema.AccessorBuilder {
+final class FieldAccessorBuilder extends zio.schema.AccessorBuilder {
+  override type Lens[F, S, A]   = Schema.Field[S, A]
+  override type Prism[F, S, A]  = Unit
+  override type Traversal[S, A] = Unit
+
+  override def makeLens[F, S, A](
+    product: Schema.Record[S],
+    term: Schema.Field[S, A]
+  ): Schema.Field[S, A] = {
+
+    val targetField: Schema.Field[S, A] =
+      product.fields
+        .find(_.fieldName == term.fieldName)
+        .getOrElse(throw new Exception("Boom !!!"))
+        .asInstanceOf[Schema.Field[S, A]]
+
+    implicit val tag: Tag[A] =
+      targetField.defaultValue.map { a: A => Tag.apply[A](a.getClass, null) }.getOrElse(throw new Exception("Boom !!!"))
+
+    implicit val ctag: ClassTag[A] =
+      targetField.defaultValue
+        .map { a: A => ClassTag[A](a.getClass()) }
+        .getOrElse(throw new Exception("Boom !!!"))
+
+    println("ctag: " + ctag)
+    println("tag: " + tag.closestClass)
+    println("ast: " + product.ast.toString() + " : " + term.schema.ast.toString())
+    println(targetField.schema.defaultValue.map(targetField.schema.toDynamic(_)))
+    targetField
+  }
+
+  override def makePrism[F, S, A](sum: Schema.Enum[S], term: Schema.Case[S, A]): Prism[F, S, A] =
+    ()
+
+  override def makeTraversal[S, A](collection: Schema.Collection[S, A], element: Schema[A]): Traversal[S, A] =
+    ()
+
+}
+
+sealed trait Ops[S, A] { self =>
+  def termName: String
+  def schema: Schema.Record[S]
+
+  def /[A1](that: PathSelector[A, A1]): PathSelector[S, A1] =
+    PathSelector[S, A1](schema, List(termName) ++ that.path)
+
+  def %(that: A)(implicit ev: A =:= String): Predicate[S, A] =
+    Predicate.StartsWith(PathSelector[S, A](schema, List(termName)).coerce, ev(that))
+
+  def =:=(that: A)(implicit ord: Ordering[A]): Predicate[S, A] =
+    Predicate.Eq(PathSelector[S, A](schema, List(termName)), that, ord)
+
+  def >>(that: A)(implicit num: Numeric[A]): Predicate[S, A] =
+    Predicate.GreaterThan(PathSelector[S, A](schema, List(termName)), that, num)
+
+  def <<(that: A)(implicit num: Numeric[A]): Predicate[S, A] =
+    Predicate.LessThan(PathSelector[S, A](schema, List(termName)), that, num)
+}
+
+final class OpsAccessorBuilder(
+  fields: List[Schema.Field[?, ?]]
+) extends zio.schema.AccessorBuilder {
+  type Lens[F, S, A]   = Ops[S, A]
+  type Prism[F, S, A]  = Unit
+  type Traversal[S, A] = Unit
+
+  def makeLens[F, S, A](
+    product: Schema.Record[S],
+    term: Schema.Field[S, A]
+  ): Ops[S, A] = {
+    val termField: Schema.Field[S, A] =
+      fields
+        .find(_.fieldName == term.fieldName)
+        .getOrElse(throw new Exception(s"${term.fieldName} not found!"))
+        .asInstanceOf[Schema.Field[S, A]]
+
+    // PathSelector[S, A](product, List(termField.fieldName))
+    new Ops[S, A] {
+      val termName = termField.fieldName
+      val schema   = product
+      override def toString: String =
+        s"Ops(${termName}, ${schema})"
+    }
+  }
+
+  def makePrism[F, S, A](sum: Schema.Enum[S], term: Schema.Case[S, A]): Prism[F, S, A] =
+    ()
+
+  def makeTraversal[S, A](collection: Schema.Collection[S, A], element: Schema[A]): Traversal[S, A] =
+    ()
+
+}
+
+object PathSelectorBuilder extends zio.schema.AccessorBuilder {
   type Lens[F, S, A]  = PathSelector[S, A]
   type Prism[F, S, A] = Unit
   /*EnumSelector*/
@@ -269,11 +364,33 @@ object BuilderSelector extends zio.schema.AccessorBuilder {
   override def makeTraversal[S, A](collection: Schema.Collection[S, A], element: Schema[A]): Unit = ()
 }
 
-sealed trait Predicate[S, A] {
+sealed trait Predicate[S, A] { self =>
   def apply(v: S): Either[String, Boolean]
+
+  def and[B](other: Predicate[S, B]): Predicate[S, A & B] =
+    Predicate.And[S, A, B](self, other)
+
+  def or[B](other: Predicate[S, B]): Predicate[S, A & B] =
+    Predicate.Or[S, A, B](self, other)
+
 }
 
 object Predicate {
+
+  final case class And[S, A, B](a: Predicate[S, A], b: Predicate[S, B]) extends Predicate[S, A & B] {
+    def apply(v: S): Either[String, Boolean] =
+      a.apply(v).flatMap { aR =>
+        if (aR) b.apply(v) else Right(aR)
+      }
+  }
+
+  final case class Or[S, A, B](a: Predicate[S, A], b: Predicate[S, B]) extends Predicate[S, A & B] {
+    def apply(v: S): Either[String, Boolean] =
+      a.apply(v).flatMap { aR =>
+        b.apply(v).map(bR => aR || bR)
+      }
+  }
+
   final case class Eq[S, A](
     selector: PathSelector[S, A],
     that: A,

@@ -17,6 +17,13 @@
   
   ((Session.user / User.age) >> 10).apply(s)
   
+  val age = Session.user / User.age
+  (age >> 18).and(age << 30).apply(s)
+
+  val (id, usr, _) = PathAccessor[Session].columns
+  val pred    = (usr / User.age).>>(18).and((usr / User.name).%("j"))
+  pred.apply(s)
+
   val pmAch = PaymentMethod.ACH("111", bankCode = "aa")
   val alice = BankUser("alice", Profile(pmAch, "123"))
 
