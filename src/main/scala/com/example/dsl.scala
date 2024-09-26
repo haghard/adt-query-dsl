@@ -1,7 +1,7 @@
 package com.example
 
 import org.slf4j.LoggerFactory
-import zio.schema.{DynamicValue, Schema, StandardType, TypeId}
+import zio.schema.{DynamicValue, Schema, TypeId}
 
 import scala.annotation.{nowarn, tailrec}
 
@@ -91,7 +91,7 @@ final case class PathSelector[S, A](
   def coerce[A1](implicit ev: A =:= A1): PathSelector[S, A1] =
     self.asInstanceOf[PathSelector[S, A1]]
 
-  def coerceUnsafe[B]: PathSelector[S, B] =
+  def narrowOpts[B]: PathSelector[S, B] =
     self.asInstanceOf[PathSelector[S, B]]
 
   def endsWith(that: A)(implicit ev: A =:= String): Predicate[S, A] =
@@ -116,10 +116,10 @@ final case class PathSelector[S, A](
     Predicate.NonEmptyOption[S, A](self)
 
   def >>?[B](that: B)(implicit ev: A =:= Option[B], num: Numeric[B]): Predicate[S, A] =
-    Predicate.GreaterThanOpt[S, A, B](self.coerceUnsafe[B], that, num)
+    Predicate.GreaterThanOpt[S, A, B](self.narrowOpts[B], that, num)
 
   def <<?[B](that: B)(implicit ev: A =:= Option[B], num: Numeric[B]): Predicate[S, A] =
-    Predicate.LessThanOpt[S, A, B](self.coerceUnsafe[B], that, num)
+    Predicate.LessThanOpt[S, A, B](self.narrowOpts[B], that, num)
 
   def apply(v: S): Either[String, A] = {
     @tailrec
@@ -344,55 +344,6 @@ final class OpsAccessorBuilder(
   type Prism[F, S, A]  = Unit
   type Traversal[S, A] = Unit
 
-  def forStandardType[S, A](
-    s: StandardType[A],
-    termField: Schema.Field[S, A],
-    product: Schema.Record[S]
-  ): Ops[S, A] =
-    s match {
-      case StandardType.StringType =>
-        new Ops[S, String] {
-          val termName = termField.fieldName
-          val schema   = product
-          override def toString: String =
-            s"OpsStr(field=$termName, schema=$schema)"
-        }
-      case StandardType.IntType =>
-        new Ops[S, A] {
-          val termName = termField.fieldName
-          val schema   = product
-          override def toString: String =
-            s"OpsNum(field=$termName, schema=$schema)"
-        }
-      case _ =>
-        ???
-    }
-
-  /*def forStandardOptType[S, A](
-    s: StandardType[_],
-    termField: Schema.Field[S, A],
-    product: Schema.Record[S]
-  ): Ops[S, A] =
-    s match {
-      case _: Option[StandardType.StringType.type] =>
-        new Ops[S, String] {
-          val termName = termField.fieldName
-          val schema   = product
-          override def toString: String =
-            s"OpsStr(field=$termName, schema=$schema)"
-        }
-      case _: Option[StandardType.IntType.type] =>
-        new Ops[S, A] {
-          val termName = termField.fieldName
-          val schema   = product
-          override def toString: String =
-            s"OpsNum(field=$termName, schema=$schema)"
-        }
-      case _ =>
-        throw new Exception("")
-    }
-   */
-
   def makeLens[F, S, A](
     product: Schema.Record[S],
     term: Schema.Field[S, A]
@@ -404,27 +355,11 @@ final class OpsAccessorBuilder(
         .asInstanceOf[Schema.Field[S, A]]
 
     // PathSelector[S, A](product, List(termField.fieldName))
-
-    /*term.schema match {
-      case Schema.Primitive(primitive, _) =>
-        forStandardType[S, A](primitive, termField, product)
-      case Schema.Optional(schema, _) =>
-        schema match {
-          case Schema.Primitive(primitive, _) =>
-            forStandardOptType[S, A](primitive, termField, product)
-          case _ =>
-            ???
-        }
-      case _ =>
-        ???
-    }
-     */
-
     new Ops[S, A] {
       val termName = termField.fieldName
       val schema   = product
       override def toString: String =
-        s"OpsNum(field=$termName, schema=$schema)"
+        s"Ops(field=$termName, schema=$schema)"
     }
   }
 
