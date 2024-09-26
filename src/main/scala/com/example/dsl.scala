@@ -4,7 +4,6 @@ import org.slf4j.LoggerFactory
 import zio.schema.{DynamicValue, Schema, TypeId}
 
 import scala.annotation.{nowarn, tailrec}
-import scala.reflect.ClassTag
 
 final case class Discriminator[S, A](sum: Schema.Enum[S], termOfSum: Schema[A]) {
 
@@ -262,9 +261,10 @@ final class FieldAccessorBuilder extends zio.schema.AccessorBuilder {
     val targetField: Schema.Field[S, A] =
       product.fields
         .find(_.fieldName == term.fieldName)
-        .getOrElse(throw new Exception("Boom !!!"))
+        .getOrElse(throw new Exception(s"${term.fieldName} not found!"))
         .asInstanceOf[Schema.Field[S, A]]
 
+    /*
     implicit val tag: Tag[A] =
       targetField.defaultValue.map { a: A => Tag.apply[A](a.getClass, null) }.getOrElse(throw new Exception("Boom !!!"))
 
@@ -277,6 +277,8 @@ final class FieldAccessorBuilder extends zio.schema.AccessorBuilder {
     println("tag: " + tag.closestClass)
     println("ast: " + product.ast.toString() + " : " + term.schema.ast.toString())
     println(targetField.schema.defaultValue.map(targetField.schema.toDynamic(_)))
+     */
+
     targetField
   }
 
@@ -330,7 +332,7 @@ final class OpsAccessorBuilder(
       val termName = termField.fieldName
       val schema   = product
       override def toString: String =
-        s"Ops(${termName}, ${schema})"
+        s"Ops(field=$termName, schema=$schema)"
     }
   }
 

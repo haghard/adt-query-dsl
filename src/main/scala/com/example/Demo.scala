@@ -72,19 +72,9 @@ object Demo extends App {
   PaymentMethod.CreditCard.DTOR.apply(dv1)
 
   val (a, b, _) = PathAccessor[Row].columns
-  val res = a.%("aaa").or((b >> 0).and(b << 3)).apply(Row("aaaaa", 3, None))
-  logger.warn("RES: " + res)
+  a.%("aaa").or((b >> 0).and(b << 3)).apply(Row("aaaaa", 3, None))
 
   val (id, usr, _) = OpsAccessor[Session].columns
-  val p            = (usr / User.age).>>(18).and((usr / User.name).%("ja"))
-  val ress         = p.apply(s)
-  logger.warn("PRES: " + ress)
-
-  val (a1, b1, opt1) = OpsAccessor[Row].columns
-
-  val res1 = a1.%("b").or(b1.=:=(3)).apply(Row("aaaaa", 3, None))
-  logger.warn("RES1: " + res1)
-
-  // opt1.typeTag
+  (usr / User.age).>>(18).and((usr / User.name).%("ja")).apply(s)
 
 }
