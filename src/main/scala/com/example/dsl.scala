@@ -1,7 +1,7 @@
 package com.example
 
 import org.slf4j.LoggerFactory
-import zio.schema.{DynamicValue, Schema, TypeId}
+import zio.schema.{DynamicValue, Schema, StandardType, TypeId}
 
 import scala.annotation.{nowarn, tailrec}
 
@@ -91,6 +91,9 @@ final case class PathSelector[S, A](
   def coerce[A1](implicit ev: A =:= A1): PathSelector[S, A1] =
     self.asInstanceOf[PathSelector[S, A1]]
 
+  def coerceUnsafe[B]: PathSelector[S, B] =
+    self.asInstanceOf[PathSelector[S, B]]
+
   def endsWith(that: A)(implicit ev: A =:= String): Predicate[S, A] =
     Predicate.EndsWith(self.coerce, ev(that))
 
@@ -108,6 +111,15 @@ final case class PathSelector[S, A](
 
   def /[A1](that: PathSelector[A, A1]): PathSelector[S, A1] =
     self.copy(path = self.path ++ that.path)
+
+  def nonEmpty(implicit ev: A <:< Option[_]): Predicate[S, A] =
+    Predicate.NonEmptyOption[S, A](self)
+
+  def >>?[B](that: B)(implicit ev: A =:= Option[B], num: Numeric[B]): Predicate[S, A] =
+    Predicate.GreaterThanOpt[S, A, B](self.coerceUnsafe[B], that, num)
+
+  def <<?[B](that: B)(implicit ev: A =:= Option[B], num: Numeric[B]): Predicate[S, A] =
+    Predicate.LessThanOpt[S, A, B](self.coerceUnsafe[B], that, num)
 
   def apply(v: S): Either[String, A] = {
     @tailrec
@@ -135,8 +147,23 @@ final case class PathSelector[S, A](
               case prim: DynamicValue.Primitive[A] @unchecked =>
                 logger.warn(s"read ${visited.mkString("/")}/$segment : ${prim.value}")
                 Right(prim.value)
-              case _ =>
-                Left(s"$segment not found inside ${path.mkString(",")} !")
+              case DynamicValue.NoneValue =>
+                // val r: Option[_] = None
+                logger.warn(s"read ${visited.mkString("/")}/$segment : None")
+                Right(null.asInstanceOf[A])
+              case r: DynamicValue.SomeValue =>
+                r.value match {
+                  case prim: DynamicValue.Primitive[A] @unchecked =>
+                    logger.warn(s"readOpt ${visited.mkString("/")}/$segment : $prim")
+                    // val r: Option[A] = Some(prim.value)
+                    // Right(r.asInstanceOf[A])
+                    Right(prim.value)
+                  case other =>
+                    Left(s"$segment not found inside ${path.mkString(",")} ! $other")
+                }
+              case other =>
+                Left(s"$segment not found inside ${path.mkString(",")} !  $other")
+
             }
           } else Left(s"$segment not found in ${path.mkString(",")} !!")
         case Nil =>
@@ -248,7 +275,7 @@ final case class PathSelector[S, A](
   }*/
 }
 
-final class FieldAccessorBuilder extends zio.schema.AccessorBuilder {
+object FieldAccessorBuilder extends zio.schema.AccessorBuilder {
   override type Lens[F, S, A]   = Schema.Field[S, A]
   override type Prism[F, S, A]  = Unit
   override type Traversal[S, A] = Unit
@@ -297,11 +324,11 @@ sealed trait Ops[S, A] { self =>
   def /[A1](that: PathSelector[A, A1]): PathSelector[S, A1] =
     PathSelector[S, A1](schema, List(termName) ++ that.path)
 
-  def %(that: A)(implicit ev: A =:= String): Predicate[S, A] =
-    Predicate.StartsWith(PathSelector[S, A](schema, List(termName)).coerce, ev(that))
-
   def =:=(that: A)(implicit ord: Ordering[A]): Predicate[S, A] =
     Predicate.Eq(PathSelector[S, A](schema, List(termName)), that, ord)
+
+  def %(that: A)(implicit ev: A =:= String): Predicate[S, A] =
+    Predicate.StartsWith(PathSelector[S, A](schema, List(termName)).coerce, ev(that))
 
   def >>(that: A)(implicit num: Numeric[A]): Predicate[S, A] =
     Predicate.GreaterThan(PathSelector[S, A](schema, List(termName)), that, num)
@@ -317,6 +344,55 @@ final class OpsAccessorBuilder(
   type Prism[F, S, A]  = Unit
   type Traversal[S, A] = Unit
 
+  def forStandardType[S, A](
+    s: StandardType[A],
+    termField: Schema.Field[S, A],
+    product: Schema.Record[S]
+  ): Ops[S, A] =
+    s match {
+      case StandardType.StringType =>
+        new Ops[S, String] {
+          val termName = termField.fieldName
+          val schema   = product
+          override def toString: String =
+            s"OpsStr(field=$termName, schema=$schema)"
+        }
+      case StandardType.IntType =>
+        new Ops[S, A] {
+          val termName = termField.fieldName
+          val schema   = product
+          override def toString: String =
+            s"OpsNum(field=$termName, schema=$schema)"
+        }
+      case _ =>
+        ???
+    }
+
+  /*def forStandardOptType[S, A](
+    s: StandardType[_],
+    termField: Schema.Field[S, A],
+    product: Schema.Record[S]
+  ): Ops[S, A] =
+    s match {
+      case _: Option[StandardType.StringType.type] =>
+        new Ops[S, String] {
+          val termName = termField.fieldName
+          val schema   = product
+          override def toString: String =
+            s"OpsStr(field=$termName, schema=$schema)"
+        }
+      case _: Option[StandardType.IntType.type] =>
+        new Ops[S, A] {
+          val termName = termField.fieldName
+          val schema   = product
+          override def toString: String =
+            s"OpsNum(field=$termName, schema=$schema)"
+        }
+      case _ =>
+        throw new Exception("")
+    }
+   */
+
   def makeLens[F, S, A](
     product: Schema.Record[S],
     term: Schema.Field[S, A]
@@ -328,11 +404,27 @@ final class OpsAccessorBuilder(
         .asInstanceOf[Schema.Field[S, A]]
 
     // PathSelector[S, A](product, List(termField.fieldName))
+
+    /*term.schema match {
+      case Schema.Primitive(primitive, _) =>
+        forStandardType[S, A](primitive, termField, product)
+      case Schema.Optional(schema, _) =>
+        schema match {
+          case Schema.Primitive(primitive, _) =>
+            forStandardOptType[S, A](primitive, termField, product)
+          case _ =>
+            ???
+        }
+      case _ =>
+        ???
+    }
+     */
+
     new Ops[S, A] {
       val termName = termField.fieldName
       val schema   = product
       override def toString: String =
-        s"Ops(field=$termName, schema=$schema)"
+        s"OpsNum(field=$termName, schema=$schema)"
     }
   }
 
@@ -436,6 +528,37 @@ object Predicate {
   ) extends Predicate[S, A] {
     def apply(v: S): Either[String, Boolean] =
       selector.apply(v).map(_.startsWith(that))
+  }
+
+  final case class NonEmptyOption[S, A](
+    selector: PathSelector[S, A]
+  ) extends Predicate[S, A] {
+    def apply(v: S): Either[String, Boolean] =
+      selector.apply(v).flatMap { r: A =>
+        if (r != null) Right(true) else Right(false)
+      }
+  }
+
+  final case class GreaterThanOpt[S, A, B](
+    selector: PathSelector[S, B],
+    that: B,
+    num: Numeric[B]
+  ) extends Predicate[S, A] {
+    def apply(v: S): Either[String, Boolean] =
+      selector.apply(v).flatMap { r: B =>
+        if (r == null) Right(false) else Right(num.gt(r, that))
+      }
+  }
+
+  final case class LessThanOpt[S, A, B](
+    selector: PathSelector[S, B],
+    that: B,
+    num: Numeric[B]
+  ) extends Predicate[S, A] {
+    def apply(v: S): Either[String, Boolean] =
+      selector.apply(v).flatMap { r: B =>
+        if (r == null) Right(false) else Right(num.lt(r, that))
+      }
   }
 
   /*final case class CaseOf[S, A, A1](

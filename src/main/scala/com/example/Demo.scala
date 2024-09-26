@@ -71,7 +71,8 @@ object Demo extends App {
   val dv1 = PaymentMethod.CreditCard.schema.toDynamic(pmCC)
   PaymentMethod.CreditCard.DTOR.apply(dv1)
 
-  val (a, b, _) = PathAccessor[Row].columns
+  val (a, b, optInt) = PathAccessor[Row].columns
+  optInt.nonEmpty.and(optInt.>>?(6)).apply(Row("aaaaa", 3, Some(7)))
   a.%("aaa").or((b >> 0).and(b << 3)).apply(Row("aaaaa", 3, None))
 
   val (id, usr, _) = OpsAccessor[Session].columns
