@@ -20,7 +20,8 @@ Compile / scalacOptions ++= Seq(
   "-Xlint",
   "-Wconf:cat=other-match-analysis:error", //Transform exhaustivity warnings into errors.
   "-Wconf:msg=lambda-parens:s",
-  "-Xmigration" //Emit migration warnings under -Xsource:3 as fatal warnings, not errors; -Xmigration disables fatality (Demote the errors to warnings)
+  "-Xmigration", //Emit migration warnings under -Xsource:3 as fatal warnings, not errors; -Xmigration disables fatality (Demote the errors to warnings)
+  "-Xfatal-warnings",
 )
 
 //https://repo1.maven.org/maven2/com/lihaoyi/
@@ -39,6 +40,9 @@ libraryDependencies ++= Seq(
   
   "com.lihaoyi" % "ammonite" % AmmoniteVersion % "test" cross CrossVersion.full
 )
+
+semanticdbEnabled := true
+semanticdbVersion := scalafixSemanticdb.revision
 
 scalafmtOnCompile := true
 
