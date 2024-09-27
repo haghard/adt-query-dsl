@@ -7,8 +7,10 @@ scalaVersion := "2.13.15"
 val schemaV = "1.4.1"
 
 Compile / scalacOptions ++= Seq(
-  "-Xsource:3-cross",
-  "-release:17",
+  //https://github.com/scala/scala/releases/tag/v2.13.15
+  //Under -Xsource:3, allow importing given, for cross-building (#10786 by @som-snytt)
+  "-Xsource:3",
+  "-release:17", //2.13.15 supports Jdk23
   "-deprecation",
   "-feature",
   "-unchecked",

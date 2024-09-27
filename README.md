@@ -20,10 +20,15 @@
   val age = Session.user / User.age
   (age >> 18).and(age << 30).apply(s)
 
-  val (id, usr, _) = PathAccessor[Session].columns
-  val pred    = (usr / User.age).>>(18).and((usr / User.name).%("j"))
-  pred.apply(s)
 
+  val (a, b, optInt) = PathAccessor[Row].columns
+  optInt.nonEmpty.and(optInt.>>?(6)).apply(Row("aaaaa", 3, Some(7)))
+  a.%("aaa").or((b >> 0).and(b << 3)).apply(Row("aaaaa", 3, None))
+
+  val (id, usr, _) = OpsAccessor[Session].columns
+  (usr / User.age).>>(18).and((usr / User.name).%("ja")).apply(s)
+  
+  
   val pmAch = PaymentMethod.ACH("111", bankCode = "aa")
   val alice = BankUser("alice", Profile(pmAch, "123"))
 
