@@ -75,7 +75,7 @@ object Demo extends App {
   optInt.nonEmpty.and(optInt.>>?(6)).apply(Row("aaaaa", 3, Some(7)))
   a.%("aaa").or((b >> 0).and(b << 3)).apply(Row("aaaaa", 3, None))
 
-  optInt.>>?(2).apply(Row("aaaaa", 3, Some(3))) //true
+  optInt.>>?(2).apply(Row("aaaaa", 3, Some(3))) // true
 
   val (id, usr, _) = OpsAccessor[Session].columns
   (usr / User.age).>>(18).and((usr / User.name).%("ja")).apply(s)

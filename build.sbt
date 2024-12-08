@@ -28,7 +28,7 @@ Compile / scalacOptions ++= Seq(
 val AmmoniteVersion = "3.0.0"
 
 libraryDependencies ++= Seq(
-  "ch.qos.logback" % "logback-classic" % "1.5.6",
+  "ch.qos.logback" % "logback-classic" % "1.5.11",
   "org.scala-lang"  %  "scala-reflect" % scalaVersion.value,
 
   "dev.zio" %% "zio-schema" % schemaV,
@@ -54,7 +54,7 @@ addCommandAlias("fmt", "all scalafmtSbt scalafmtAll")
 addCommandAlias("fmtCheck", "all scalafmtSbtCheck scalafmtCheckAll")
 
 
-addCommandAlias("c", "compile;fix")
+addCommandAlias("c", "compile;fix;fmt")
 addCommandAlias("r", "reload")
 
 //test:run
