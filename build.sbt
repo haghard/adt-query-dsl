@@ -2,11 +2,13 @@ name := "adt-query-dsl"
 
 version := "1.0"
 
-scalaVersion := "2.13.15"
+scalaVersion := "2.13.16"
 
-val schemaV = "1.4.1"
+//TODO 
+val schemaV = "1.6.1"
 
 Compile / scalacOptions ++= Seq(
+  //https://github.com/scala/scala/releases/tag/v2.13.16
   //https://github.com/scala/scala/releases/tag/v2.13.15
   //Under -Xsource:3, allow importing given, for cross-building (#10786 by @som-snytt)
   "-Xsource:3",
@@ -25,7 +27,7 @@ Compile / scalacOptions ++= Seq(
 )
 
 //https://repo1.maven.org/maven2/com/lihaoyi/
-val AmmoniteVersion = "3.0.0"
+val AmmoniteVersion = "3.0.1"
 
 libraryDependencies ++= Seq(
   "ch.qos.logback" % "logback-classic" % "1.5.11",
@@ -47,7 +49,6 @@ semanticdbVersion := scalafixSemanticdb.revision
 scalafmtOnCompile := true
 
 //zio.elasticsearch
-addCommandAlias("check", "fixCheck; fmtCheck; headerCheck")
 addCommandAlias("fix", "scalafixAll")
 addCommandAlias("fixCheck", "scalafixAll --check")
 addCommandAlias("fmt", "all scalafmtSbt scalafmtAll")
