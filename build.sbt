@@ -1,18 +1,16 @@
 name := "adt-query-dsl"
 
 version := "1.0"
-
 scalaVersion := "2.13.16"
 
-//TODO 
 val schemaV = "1.6.1"
 
 Compile / scalacOptions ++= Seq(
   //https://github.com/scala/scala/releases/tag/v2.13.16
-  //https://github.com/scala/scala/releases/tag/v2.13.15
-  //Under -Xsource:3, allow importing given, for cross-building (#10786 by @som-snytt)
+  //Under -Xsource:3, allow importing given, for cross-building
   "-Xsource:3",
-  "-release:17", //2.13.15 supports Jdk23
+  "-target:23",
+  "-release:23",
   "-deprecation",
   "-feature",
   "-unchecked",
@@ -26,11 +24,14 @@ Compile / scalacOptions ++= Seq(
   "-Xfatal-warnings",
 )
 
+javacOptions ++= Seq("-source", "23", "-target", "23")
+javaHome := Some(file("/Library/Java/JavaVirtualMachines/jdk-23.jdk/Contents/Home/"))
+
 //https://repo1.maven.org/maven2/com/lihaoyi/
-val AmmoniteVersion = "3.0.1"
+val AmmoniteVersion = "3.0.2"
 
 libraryDependencies ++= Seq(
-  "ch.qos.logback" % "logback-classic" % "1.5.11",
+  "ch.qos.logback" % "logback-classic" % "1.5.17",
   "org.scala-lang"  %  "scala-reflect" % scalaVersion.value,
 
   "dev.zio" %% "zio-schema" % schemaV,
@@ -38,7 +39,7 @@ libraryDependencies ++= Seq(
   "dev.zio" %% "zio-schema-json" % schemaV,
 
   //https://zio.dev/zio-prelude/
-  "dev.zio" %% "zio-prelude" % "1.0.0-RC21",
+  //"dev.zio" %% "zio-prelude" % "1.0.0-RC21",
   
   "com.lihaoyi" % "ammonite" % AmmoniteVersion % "test" cross CrossVersion.full
 )
