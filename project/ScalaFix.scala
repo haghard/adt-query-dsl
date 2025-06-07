@@ -1,5 +1,5 @@
 import sbt.*
-import sbt.Keys.{scalaBinaryVersion, semanticdbEnabled, semanticdbVersion}
+import sbt.Keys.{semanticdbEnabled, semanticdbVersion}
 import scalafix.sbt.ScalafixPlugin
 
 //ScalaFix
@@ -9,7 +9,8 @@ import scalafix.sbt.ScalafixPlugin
 object ScalaFix extends AutoPlugin {
 
   override def requires = ScalafixPlugin
-  override def trigger  = allRequirements
+
+  override def trigger = allRequirements
 
   import ScalafixPlugin.autoImport._
 

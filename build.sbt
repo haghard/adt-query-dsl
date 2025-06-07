@@ -3,14 +3,15 @@ name := "adt-query-dsl"
 version := "1.0"
 scalaVersion := "2.13.16"
 
-val schemaV = "1.6.1"
+val schemaV = "1.7.2"
 
 Compile / scalacOptions ++= Seq(
   //https://github.com/scala/scala/releases/tag/v2.13.16
   //Under -Xsource:3, allow importing given, for cross-building
   "-Xsource:3",
-  "-target:23",
-  "-release:23",
+  "-target:24",
+  "-release:24",
+  "-Ylog-classpath",  //
   "-deprecation",
   "-feature",
   "-unchecked",
@@ -24,14 +25,14 @@ Compile / scalacOptions ++= Seq(
   "-Xfatal-warnings",
 )
 
-javacOptions ++= Seq("-source", "23", "-target", "23")
-javaHome := Some(file("/Library/Java/JavaVirtualMachines/jdk-23.jdk/Contents/Home/"))
+javacOptions ++= Seq("-source", "24", "-target", "24")
+javaHome := Some(file("/Library/Java/JavaVirtualMachines/jdk-24.jdk/Contents/Home/"))
 
 //https://repo1.maven.org/maven2/com/lihaoyi/
 val AmmoniteVersion = "3.0.2"
 
 libraryDependencies ++= Seq(
-  "ch.qos.logback" % "logback-classic" % "1.5.17",
+  "ch.qos.logback" % "logback-classic" % "1.5.18",
   "org.scala-lang"  %  "scala-reflect" % scalaVersion.value,
 
   "dev.zio" %% "zio-schema" % schemaV,
