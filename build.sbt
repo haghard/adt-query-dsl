@@ -1,15 +1,14 @@
 name := "adt-query-dsl"
 
 version := "1.0"
-scalaVersion := "2.13.16"
+scalaVersion := "2.13.18"
 
-//"1.7.2"
-val schemaV = "1.7.4"
+val schemaV = "1.7.6"
 
 //export JAVA_HOME=/Library/Java/JavaVirtualMachines/jdk-24.jdk/Contents/Home
 lazy val javaVersion = sys.props("java.specification.version")
 //https://repo1.maven.org/maven2/com/lihaoyi/
-lazy val AmmoniteVersion = "3.0.2"
+lazy val AmmoniteVersion = "3.0.6"
 
 //show scalacOptions
 Compile / scalacOptions ++= Seq(
@@ -38,7 +37,7 @@ javaHome := Some(file(s"/Library/Java/JavaVirtualMachines/jdk-${javaVersion}.jdk
 
 
 libraryDependencies ++= Seq(
-  "ch.qos.logback" % "logback-classic" % "1.5.18",
+  "ch.qos.logback" % "logback-classic" % "1.5.26",
   "org.scala-lang"  %  "scala-reflect" % scalaVersion.value,
 
   "dev.zio" %% "zio-schema" % schemaV,
