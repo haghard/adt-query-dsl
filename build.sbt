@@ -3,12 +3,12 @@ name := "adt-query-dsl"
 version := "1.0"
 scalaVersion := "2.13.18"
 
-val schemaV = "1.7.6"
+val schemaV = "1.8.1"
 
-//export JAVA_HOME=/Library/Java/JavaVirtualMachines/jdk-24.jdk/Contents/Home
+//export JAVA_HOME=/Library/Java/JavaVirtualMachines/jdk-25.jdk/Contents/Home
 lazy val javaVersion = sys.props("java.specification.version")
 //https://repo1.maven.org/maven2/com/lihaoyi/
-lazy val AmmoniteVersion = "3.0.6"
+lazy val AmmoniteVersion = "3.0.8"
 
 //show scalacOptions
 Compile / scalacOptions ++= Seq(
@@ -37,16 +37,13 @@ javaHome := Some(file(s"/Library/Java/JavaVirtualMachines/jdk-${javaVersion}.jdk
 
 
 libraryDependencies ++= Seq(
-  "ch.qos.logback" % "logback-classic" % "1.5.26",
+  "ch.qos.logback" % "logback-classic" % "1.5.32",
   "org.scala-lang"  %  "scala-reflect" % scalaVersion.value,
 
   "dev.zio" %% "zio-schema" % schemaV,
   "dev.zio" %% "zio-schema-derivation" % schemaV,
   "dev.zio" %% "zio-schema-json" % schemaV,
 
-  //https://zio.dev/zio-prelude/
-  //"dev.zio" %% "zio-prelude" % "1.0.0-RC21",
-  
   "com.lihaoyi" % "ammonite" % AmmoniteVersion % "test" cross CrossVersion.full
 )
 
