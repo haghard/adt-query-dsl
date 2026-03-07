@@ -3,7 +3,7 @@ name := "adt-query-dsl"
 version := "1.0"
 scalaVersion := "2.13.18"
 
-val schemaV = "1.8.1"
+val schemaV = "1.8.2"
 
 //export JAVA_HOME=/Library/Java/JavaVirtualMachines/jdk-25.jdk/Contents/Home
 lazy val javaVersion = sys.props("java.specification.version")
