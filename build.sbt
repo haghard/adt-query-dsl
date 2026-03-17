@@ -3,7 +3,7 @@ name := "adt-query-dsl"
 version := "1.0"
 scalaVersion := "2.13.18"
 
-val schemaV = "1.8.2"
+val schemaV = "1.8.3"
 
 //export JAVA_HOME=/Library/Java/JavaVirtualMachines/jdk-25.jdk/Contents/Home
 lazy val javaVersion = sys.props("java.specification.version")
@@ -15,8 +15,8 @@ Compile / scalacOptions ++= Seq(
   //https://github.com/scala/scala/releases/tag/v2.13.16
   //Under -Xsource:3, allow importing given, for cross-building
   "-Xsource:3",
-  s"-target:${javaVersion}",
-  s"-release:${javaVersion}",
+  s"-target:$javaVersion",
+  s"-release:$javaVersion",
   "-Ylog-classpath",  //
   "-deprecation",
   "-feature",
@@ -34,7 +34,6 @@ Compile / scalacOptions ++= Seq(
 // show javacOptions
 javacOptions ++= Seq("-source", javaVersion, "-target", javaVersion)
 javaHome := Some(file(s"/Library/Java/JavaVirtualMachines/jdk-${javaVersion}.jdk/Contents/Home/"))
-
 
 libraryDependencies ++= Seq(
   "ch.qos.logback" % "logback-classic" % "1.5.32",
