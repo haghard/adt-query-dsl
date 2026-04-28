@@ -8,14 +8,13 @@ val schemaV = "1.8.3"
 //export JAVA_HOME=/Library/Java/JavaVirtualMachines/jdk-25.jdk/Contents/Home
 lazy val javaVersion = sys.props("java.specification.version")
 //https://repo1.maven.org/maven2/com/lihaoyi/
-lazy val AmmoniteVersion = "3.0.8"
+lazy val AmmoniteVersion = "3.0.9"
 
 //show scalacOptions
 Compile / scalacOptions ++= Seq(
   //https://github.com/scala/scala/releases/tag/v2.13.16
   //Under -Xsource:3, allow importing given, for cross-building
   "-Xsource:3",
-  s"-target:$javaVersion",
   s"-release:$javaVersion",
   "-Ylog-classpath",  //
   "-deprecation",
@@ -36,12 +35,12 @@ javacOptions ++= Seq("-source", javaVersion, "-target", javaVersion)
 javaHome := Some(file(s"/Library/Java/JavaVirtualMachines/jdk-${javaVersion}.jdk/Contents/Home/"))
 
 libraryDependencies ++= Seq(
-  "ch.qos.logback" % "logback-classic" % "1.5.32",
-  "org.scala-lang"  %  "scala-reflect" % scalaVersion.value,
+  ("ch.qos.logback" % "logback-classic" % "1.5.32") withSources(),
+  ("org.scala-lang"  %  "scala-reflect" % scalaVersion.value) withSources(),
 
-  "dev.zio" %% "zio-schema" % schemaV,
-  "dev.zio" %% "zio-schema-derivation" % schemaV,
-  "dev.zio" %% "zio-schema-json" % schemaV,
+  ("dev.zio" %% "zio-schema" % schemaV) withSources(),
+  ("dev.zio" %% "zio-schema-derivation" % schemaV)  withSources(),
+  ("dev.zio" %% "zio-schema-json" % schemaV) withSources(),
 
   "com.lihaoyi" % "ammonite" % AmmoniteVersion % "test" cross CrossVersion.full
 )
@@ -51,7 +50,6 @@ semanticdbVersion := scalafixSemanticdb.revision
 
 scalafmtOnCompile := true
 
-//zio.elasticsearch
 addCommandAlias("fix", "scalafixAll")
 addCommandAlias("fixCheck", "scalafixAll --check")
 addCommandAlias("fmt", "all scalafmtSbt scalafmtAll")
